@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtCore import QDate, QTime, QDateTime, Qt
-from PyQt5.QtWidgets import QApplication, QWidget, QMenu, QMainWindow, QAction, qApp
+from PyQt5.QtWidgets import QApplication, QWidget, QMenu, QMainWindow, QAction, qApp, QFileDialog
 from PyQt5.QtGui import QIcon
 
 
@@ -14,7 +14,8 @@ class UserInterface(QMainWindow):
 
     def __init__(self):
         super().__init__()
-
+        self.inputImage = ""
+        self.targetImage = ""
         self.initUI()
 
 
@@ -22,11 +23,11 @@ class UserInterface(QMainWindow):
 
         openInputAct = QAction('&OpenInput', self)
         openInputAct.setStatusTip('Open Input')
-        #openInputAct.triggered.connect(qApp.quit)
+        openInputAct.triggered.connect(self.openFileInput)
 
         openTargetAct = QAction('&OpenTarget', self)
         openTargetAct.setStatusTip('Open Target')
-        #openTargetAct.triggered.connect(qApp.quit)
+        openTargetAct.triggered.connect(self.openFileTarget)
 
         exitAct = QAction('&Exit', self)
         exitAct.setStatusTip('Exit')
@@ -40,9 +41,24 @@ class UserInterface(QMainWindow):
         fileMenu.addAction(openTargetAct)
         fileMenu.addAction(exitAct)
 
-        self.setGeometry(300, 300, 300, 200)
+        self.setGeometry(200, 200, 400, 300)
         self.setWindowTitle('Histogram Equalization')
         self.show()
+
+    def openFileInput(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
+        if fileName:
+            print(fileName)
+
+    def openFileTarget(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
+        if fileName:
+            print(fileName)
+
 
 if __name__ == '__main__':
     main()
