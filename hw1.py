@@ -19,6 +19,8 @@ class UserInterface(QMainWindow):
         super().__init__()
         self.histInputImg = "histInput.png"
         self.histTargetImg = "histTarget.png"
+        self.inputImg = ""
+        self.targetImg = ""
         self.initUI()
 
     def initUI(self):
@@ -85,14 +87,14 @@ class UserInterface(QMainWindow):
     def openFileInput(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
+        self.inputImg, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
 
-        if fileName:
+        if self.inputImg:
             l1 = QLabel()
-            l1.setPixmap(QPixmap(fileName))
+            l1.setPixmap(QPixmap(self.inputImg))
             self.vbox1.addWidget(l1)
 
-            self.histogramOfImage(fileName,"input")
+            self.histogramOfImage(self.inputImg,"input")
 
             l1 = QLabel()
             l1.setPixmap(QPixmap(self.histInputImg))
@@ -101,20 +103,116 @@ class UserInterface(QMainWindow):
     def openFileTarget(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
-        if fileName:
+        self.targetImg, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
+
+        if self.targetImg:
             l2 = QLabel()
-            l2.setPixmap(QPixmap(fileName))
+            l2.setPixmap(QPixmap(self.targetImg))
             self.vbox2.addWidget(l2)
 
-            self.histogramOfImage(fileName, "target")
+            self.histogramOfImage(self.targetImg, "target")
 
             l2 = QLabel()
             l2.setPixmap(QPixmap(self.histTargetImg))
             self.vbox2.addWidget(l2)
 
     def equalizeHistogram(self):
-        print("equalize")
+        if self.inputImg:
+            img = mpimg.imread(self.inputImg)
+
+            r = img[:,:,0];
+            g = img[:,:,1];
+            b = img[:,:,2];
+
+            row,col=r.shape #height,witdh
+            hist = np.zeros((256), np.uint64)
+            for i in range(0,row):
+                for j in range(0,col):
+                    hist[int(round(r[i,j]*255,0))] += 1
+
+            cdf = np.zeros((256), np.float64)
+            cdf[0] = hist[0]
+            for i in range(1,len(hist)):
+                cdf[i] = cdf[i-1] + hist[i]
+
+            cdf_normalized = cdf * hist.max() / cdf.max()
+
+            cdf_m = np.ma.masked_equal(cdf,0)
+            cdf_m = (cdf_m - cdf_m.min())*255/(cdf_m.max()-cdf_m.min())
+            cdf = np.ma.filled(cdf_m,0).astype('uint8')
+
+            J = np.uint64(255*cdf)
+
+            #Re-map values from equalized histogram into the image
+            for i in range(0,row):
+                for j in range(0,col):
+                    tmp = r[i,j]
+                    r[i,j]= J[int(round(tmp*255,0))]
+
+            row,col=g.shape #height,witdh
+            hist = np.zeros((256), np.uint64)
+            for i in range(0,row):
+                for j in range(0,col):
+                    hist[int(round(g[i,j]*255,0))] += 1
+
+            cdf = np.zeros((256), np.float64)
+            cdf[0] = hist[0]
+            for i in range(1,len(hist)):
+                cdf[i] = cdf[i-1] + hist[i]
+
+            cdf_normalized = cdf * hist.max() / cdf.max()
+
+            cdf_m = np.ma.masked_equal(cdf,0)
+            cdf_m = (cdf_m - cdf_m.min())*255/(cdf_m.max()-cdf_m.min())
+            cdf = np.ma.filled(cdf_m,0).astype('uint8')
+
+            J = np.uint64(255*cdf)
+
+            #Re-map values from equalized histogram into the image
+            for i in range(0,row):
+                for j in range(0,col):
+                    tmp = g[i,j]
+                    g[i,j]= J[int(round(tmp*255,0))]
+
+            row,col=b.shape #height,witdh
+            hist = np.zeros((256), np.uint64)
+            for i in range(0,row):
+                for j in range(0,col):
+                    hist[int(round(b[i,j]*255,0))] += 1
+
+            cdf = np.zeros((256), np.float64)
+            cdf[0] = hist[0]
+            for i in range(1,len(hist)):
+                cdf[i] = cdf[i-1] + hist[i]
+
+            cdf_normalized = cdf * hist.max() / cdf.max()
+
+            cdf_m = np.ma.masked_equal(cdf,0)
+            cdf_m = (cdf_m - cdf_m.min())*255/(cdf_m.max()-cdf_m.min())
+            cdf = np.ma.filled(cdf_m,0).astype('uint8')
+
+            J = np.uint64(255*cdf)
+
+            #Re-map values from equalized histogram into the image
+            for i in range(0,row):
+                for j in range(0,col):
+                    tmp = b[i,j]
+                    b[i,j]= J[int(round(tmp*255,0))]
+
+            newImage = np.zeros((row,col,4), np.float64)
+            newImage[..., 0] = r * 1
+            newImage[..., 1] = g * 1
+            newImage[..., 2] = b * 1
+            newImage[..., 3] = img[:,:,3]
+
+            plt.clf()
+            plt.imshow(newImage)
+            plt.savefig("resultPic.png")
+
+            l2 = QLabel()
+            l2.setPixmap(QPixmap("resultPic.png"))
+            self.vbox3.addWidget(l2)
+
 
     def histogramOfImage(self, fileName, type):
         # clear all plots before
