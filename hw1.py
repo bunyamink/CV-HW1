@@ -150,21 +150,17 @@ class UserInterface(QMainWindow):
             g = newImage[:,:,1];
             b = newImage[:,:,2];
 
-            hist = self.calcHist2(r)
-
             x = np.arange(0,256)
+
+            hist = self.calcHist2(r)
             plt.subplot(3,1,1)
             plt.bar(x,hist,color="red",align="center")
 
             hist = self.calcHist2(g)
-
-            x = np.arange(0,256)
             plt.subplot(3,1,2)
             plt.bar(x,hist,color="green",align="center")
 
             hist = self.calcHist2(b)
-
-            x = np.arange(0,256)
             plt.subplot(3,1,3)
             plt.bar(x,hist,color="blue",align="center")
 
@@ -468,32 +464,19 @@ class UserInterface(QMainWindow):
         g = img[:,:,1];
         b = img[:,:,2];
 
-        row, col = r.shape
-        y = np.zeros((256), np.uint64)
-        for i in range(0,row):
-            for j in range(0,col):
-                y[int(round(r[i,j]*255,0))] += 1
         x = np.arange(0,256)
+
+        hist = self.calcHist(r)
         plt.subplot(3,1,1)
-        plt.bar(x,y,color="red",align="center")
+        plt.bar(x,hist,color="red",align="center")
 
-        row, col = g.shape
-        y = np.zeros((256), np.uint64)
-        for i in range(0,row):
-            for j in range(0,col):
-                y[int(round(g[i,j]*255,0))] += 1
-        x = np.arange(0,256)
+        hist = self.calcHist(g)
         plt.subplot(3,1,2)
-        plt.bar(x,y,color="green",align="center")
+        plt.bar(x,hist,color="green",align="center")
 
-        row, col = b.shape
-        y = np.zeros((256), np.uint64)
-        for i in range(0,row):
-            for j in range(0,col):
-                y[int(round(b[i,j]*255,0))] += 1
-        x = np.arange(0,256)
+        hist = self.calcHist(b)
         plt.subplot(3,1,3)
-        plt.bar(x,y,color="blue",align="center")
+        plt.bar(x,hist,color="blue",align="center")
 
         if type == "input":
             plt.savefig(self.histInputImg)
