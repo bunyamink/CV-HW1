@@ -117,14 +117,113 @@ class UserInterface(QMainWindow):
             self.vbox2.addWidget(l2)
 
     def equalizeHistogram(self):
-        if self.inputImg:
+        if self.inputImg and self.targetImg:
             img = mpimg.imread(self.inputImg)
+            img2 = mpimg.imread(self.targetImg)
 
             r = img[:,:,0];
             g = img[:,:,1];
             b = img[:,:,2];
 
-            row,col=r.shape #height,witdh
+            r2 = img2[:,:,0];
+            g2 = img2[:,:,1];
+            b2 = img2[:,:,2];
+
+            oldshape = r.shape
+
+            s_values, bin_idx, s_counts = np.unique(r, return_inverse=True,return_counts=True)
+            t_values, t_counts = np.unique(r2, return_counts=True)
+
+            s_quantiles = np.cumsum(s_counts).astype(np.float64)
+            s_quantiles /= s_quantiles[-1]
+            t_quantiles = np.cumsum(t_counts).astype(np.float64)
+            t_quantiles /= t_quantiles[-1]
+
+            interp_t_values = np.interp(s_quantiles, t_quantiles, t_values)
+
+            matched_r = interp_t_values[bin_idx].reshape(oldshape)
+
+            oldshape = g.shape
+
+            s_values, bin_idx, s_counts = np.unique(g, return_inverse=True,return_counts=True)
+            t_values, t_counts = np.unique(g2, return_counts=True)
+
+            s_quantiles = np.cumsum(s_counts).astype(np.float64)
+            s_quantiles /= s_quantiles[-1]
+            t_quantiles = np.cumsum(t_counts).astype(np.float64)
+            t_quantiles /= t_quantiles[-1]
+
+            interp_t_values = np.interp(s_quantiles, t_quantiles, t_values)
+
+            matched_g = interp_t_values[bin_idx].reshape(oldshape)
+
+            oldshape = b.shape
+
+            s_values, bin_idx, s_counts = np.unique(b, return_inverse=True,return_counts=True)
+            t_values, t_counts = np.unique(b2, return_counts=True)
+
+            s_quantiles = np.cumsum(s_counts).astype(np.float64)
+            s_quantiles /= s_quantiles[-1]
+            t_quantiles = np.cumsum(t_counts).astype(np.float64)
+            t_quantiles /= t_quantiles[-1]
+
+            interp_t_values = np.interp(s_quantiles, t_quantiles, t_values)
+
+            matched_b = interp_t_values[bin_idx].reshape(oldshape)
+
+            newImage = np.zeros((r.shape[0],r.shape[1],3), np.float64)
+            newImage[..., 0] = matched_r * 1
+            newImage[..., 1] = matched_g * 1
+            newImage[..., 2] = matched_b * 1
+
+            plt.clf()
+            plt.imshow(newImage)
+            plt.savefig("resultPic.png")
+
+            l2 = QLabel()
+            l2.setPixmap(QPixmap("resultPic.png"))
+            self.vbox3.addWidget(l2)
+
+            plt.clf()
+
+            r = newImage[:,:,0];
+            g = newImage[:,:,1];
+            b = newImage[:,:,2];
+
+            hist = np.zeros((256), np.float64)
+            for i in range(0,r.shape[0]):
+                for j in range(0,r.shape[1]):
+                    hist[int(round(r[i,j]*255,0))] += 1
+
+            x = np.arange(0,256)
+            plt.subplot(3,1,1)
+            plt.bar(x,hist,color="red",align="center")
+
+            hist = np.zeros((256), np.float64)
+            for i in range(0,g.shape[0]):
+                for j in range(0,g.shape[1]):
+                    hist[int(round(g[i,j]*255,0))] += 1
+
+            x = np.arange(0,256)
+            plt.subplot(3,1,2)
+            plt.bar(x,hist,color="green",align="center")
+
+            hist = np.zeros((256), np.float64)
+            for i in range(0,b.shape[0]):
+                for j in range(0,b.shape[1]):
+                    hist[int(round(b[i,j]*255,0))] += 1
+
+            x = np.arange(0,256)
+            plt.subplot(3,1,3)
+            plt.bar(x,hist,color="blue",align="center")
+
+            plt.savefig("histResult.png")
+
+            l2 = QLabel()
+            l2.setPixmap(QPixmap("histResult.png"))
+            self.vbox3.addWidget(l2)
+
+            '''row,col=r.shape #height,witdh
             hist = np.zeros((256), np.uint64)
             for i in range(0,row):
                 for j in range(0,col):
@@ -211,7 +310,9 @@ class UserInterface(QMainWindow):
 
             l2 = QLabel()
             l2.setPixmap(QPixmap("resultPic.png"))
-            self.vbox3.addWidget(l2)
+            self.vbox3.addWidget(l2)'''
+
+
 
 
     def histogramOfImage(self, fileName, type):
