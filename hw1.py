@@ -129,7 +129,52 @@ class UserInterface(QMainWindow):
             g2 = img2[:,:,1];
             b2 = img2[:,:,2];
 
-            oldshape = r.shape
+            rMatched = self.histMatching(r,r2)
+            gMatched = self.histMatching(g,g2)
+            bMatched = self.histMatching(b,b2)
+
+            newImage = np.zeros((img.shape[0],img.shape[1],3), np.float64)
+            newImage[..., 0] = rMatched * 255
+            newImage[..., 1] = gMatched * 255
+            newImage[..., 2] = bMatched * 255
+
+            plt.clf()
+            plt.imshow(newImage)
+            plt.savefig("resultPic.png")
+
+            l2 = QLabel()
+            l2.setPixmap(QPixmap("resultPic.png"))
+            self.vbox3.addWidget(l2)
+
+            r = newImage[:,:,0];
+            g = newImage[:,:,1];
+            b = newImage[:,:,2];
+
+            hist = self.calcHist2(r)
+
+            x = np.arange(0,256)
+            plt.subplot(3,1,1)
+            plt.bar(x,hist,color="red",align="center")
+
+            hist = self.calcHist2(g)
+
+            x = np.arange(0,256)
+            plt.subplot(3,1,2)
+            plt.bar(x,hist,color="green",align="center")
+
+            hist = self.calcHist2(b)
+
+            x = np.arange(0,256)
+            plt.subplot(3,1,3)
+            plt.bar(x,hist,color="blue",align="center")
+
+            plt.savefig("histResult.png")
+
+            l2 = QLabel()
+            l2.setPixmap(QPixmap("histResult.png"))
+            self.vbox3.addWidget(l2)
+
+            '''oldshape = r.shape
 
             s_values, bin_idx, s_counts = np.unique(r, return_inverse=True,return_counts=True)
             t_values, t_counts = np.unique(r2, return_counts=True)
@@ -221,7 +266,49 @@ class UserInterface(QMainWindow):
 
             l2 = QLabel()
             l2.setPixmap(QPixmap("histResult.png"))
-            self.vbox3.addWidget(l2)
+            self.vbox3.addWidget(l2)'''
+
+            ##################################################################
+
+            '''height = r.shape[0]
+            width = r.shape[1]
+            pixels = width * height
+
+            height_ref = r2.shape[0]
+            width_ref = r2.shape[1]
+            pixels_ref = width_ref * height_ref
+
+            hist = self.calcHist(r)
+            hist_ref = self.calcHist(r2)
+
+            cum_hist = self.calcCDF(hist)
+            cum_hist_ref = self.calcCDF(hist_ref)
+
+            prob_cum_hist = cum_hist / pixels
+            prob_cum_hist_ref = cum_hist_ref / pixels_ref
+
+            K = 256
+            new_values = np.zeros((K))
+
+            for a in np.arange(K):
+                j = K - 1
+                while True:
+                    new_values[a] = j
+                    j = j - 1
+                    if j < 0 or prob_cum_hist[a] > prob_cum_hist_ref[j]:
+                        break
+
+            for i in np.arange(height):
+                for j in np.arange(width):
+                    a = r[i,j]
+                    b = new_values[int(round(a*255,0))]
+                    r[i,j] = b
+
+            plt.clf()
+            plt.imshow(r)
+            plt.show()'''
+
+            ###########################
 
             '''row,col=r.shape #height,witdh
             hist = np.zeros((256), np.uint64)
@@ -313,7 +400,63 @@ class UserInterface(QMainWindow):
             self.vbox3.addWidget(l2)'''
 
 
+    def calcHist(self,img):
+        hist = np.zeros((256), np.float64)
+        for i in range(0,img.shape[0]):
+            for j in range(0,img.shape[1]):
+                hist[int(round(img[i,j]*255,0))] += 1
+        return hist
 
+    def calcHist2(self,img):
+        hist = np.zeros((256), np.float64)
+        for i in range(0,img.shape[0]):
+            for j in range(0,img.shape[1]):
+                hist[int(round(img[i,j]/255,0))] += 1
+        return hist
+
+    def calcCDF(self, hist):
+        cdf = np.zeros((256), np.float64)
+        cdf[0] = hist[0]
+        for i in range(1,len(hist)):
+            cdf[i] = cdf[i-1] + hist[i]
+        return cdf
+
+    def histMatching(self, img, imgTarget):
+        height = img.shape[0]
+        width = img.shape[1]
+        pixels = width * height
+
+        height_ref = imgTarget.shape[0]
+        width_ref = imgTarget.shape[1]
+        pixels_ref = width_ref * height_ref
+
+        hist = self.calcHist(img)
+        hist_ref = self.calcHist(imgTarget)
+
+        cum_hist = self.calcCDF(hist)
+        cum_hist_ref = self.calcCDF(hist_ref)
+
+        prob_cum_hist = cum_hist / pixels
+        prob_cum_hist_ref = cum_hist_ref / pixels_ref
+
+        K = 256
+        new_values = np.zeros((K))
+
+        for a in np.arange(K):
+            j = K - 1
+            while True:
+                new_values[a] = j
+                j = j - 1
+                if j < 0 or prob_cum_hist[a] > prob_cum_hist_ref[j]:
+                    break
+
+        for i in np.arange(height):
+            for j in np.arange(width):
+                a = img[i,j]
+                b = new_values[int(round(a*255,0))]
+                img[i,j] = b
+
+        return img
 
     def histogramOfImage(self, fileName, type):
         # clear all plots before
